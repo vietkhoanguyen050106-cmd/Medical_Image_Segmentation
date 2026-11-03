@@ -1,0 +1,29 @@
+# Python
+__pycache__/
+*.py[cod]
+
+# Virtual environment
+.venv/
+venv/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Dataset - never commit raw data
+data/*
+!data/README.md
+
+# Model checkpoints
+*.pth
+*.pt
+*.onnx
+
+# Training outputs
+outputs/*
+!outputs/.gitkeep
+
+# Local environment variables
+.env
+
+# IDE
+.vscode/
