@@ -1,60 +1,35 @@
-
+from datasets import load_dataset
 from torch.utils.data import DataLoader
 
-from src.dataset import PolypSegmentationDataset
+from .dataset import PolypSegmentationDataset
+from .transforms import get_train_transforms, get_eval_transforms
+
+HF_NAME = "MedOtter/KvasirSEG"
 
 
-def build_dataloaders(
-    hf_dataset,
-    image_size=(256, 256),
-    batch_size=4,
-    num_workers=0,
-    pin_memory=False
-):
-    """
-    Build PyTorch DataLoaders from Hugging Face dataset splits.
+def _pick_split(ds, candidates):
+    for name in candidates:
+        if name in ds:
+            return ds[name]
+    raise KeyError(f"Không tìm thấy split nào trong {candidates}. Có: {list(ds.keys())}")
 
-    Expected splits:
-        train, val, test
-    """
 
-    required_splits = {"train", "val", "test"}
+def build_dataloaders(image_size=256, batch_size=16, num_workers=2,
+                      hf_name=HF_NAME, pin_memory=True):
+    ds = load_dataset(hf_name)
+    train_hf = _pick_split(ds, ["train"])
+    val_hf = _pick_split(ds, ["validation", "val", "valid"])
+    test_hf = _pick_split(ds, ["test"])
 
-    missing_splits = required_splits - set(hf_dataset.keys())
+    train_set = PolypSegmentationDataset(train_hf, get_train_transforms(image_size))
+    val_set = PolypSegmentationDataset(val_hf, get_eval_transforms(image_size))
+    test_set = PolypSegmentationDataset(test_hf, get_eval_transforms(image_size))
 
-    if missing_splits:
-        raise ValueError(
-            f"Missing dataset splits: {missing_splits}"
-        )
-
-    if batch_size <= 0:
-        raise ValueError("batch_size must be positive.")
-
-    if num_workers < 0:
-        raise ValueError("num_workers cannot be negative.")
-
-    # Step 1: Build PyTorch Dataset objects.
-    datasets = {}
-
-    for split_name in ["train", "val", "test"]:
-
-        datasets[split_name] = PolypSegmentationDataset(
-            hf_dataset=hf_dataset[split_name],
-            image_size=image_size
-        )
-
-    # Step 2: Build DataLoader objects.
-    loaders = {}
-
-    for split_name, dataset in datasets.items():
-
-        loaders[split_name] = DataLoader(
-            dataset,
-            batch_size=batch_size,
-            shuffle=(split_name == "train"),
-            num_workers=num_workers,
-            pin_memory=pin_memory,
-            drop_last=False
-        )
-
-    return loaders
+    train_loader = DataLoader(train_set, batch_size=batch_size, shuffle=True,
+                              num_workers=num_workers, pin_memory=pin_memory,
+                              drop_last=True)
+    val_loader = DataLoader(val_set, batch_size=batch_size, shuffle=False,
+                            num_workers=num_workers, pin_memory=pin_memory)
+    test_loader = DataLoader(test_set, batch_size=batch_size, shuffle=False,
+                             num_workers=num_workers, pin_memory=pin_memory)
+    return train_loader, val_loader, test_loader
