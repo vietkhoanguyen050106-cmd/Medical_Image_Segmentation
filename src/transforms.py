@@ -6,8 +6,8 @@ nhung phep mau (ColorJitter...) chi tac dong len image.
 import albumentations as A
 from albumentations.pytorch import ToTensorV2
 
-MEAN = (0.485, 0.456, 0.406)
-STD = (0.229, 0.224, 0.225)
+IMAGENET_MEAN = (0.485, 0.456, 0.406)
+IMAGENET_STD = (0.229, 0.224, 0.225)
 
 
 def get_train_transforms(size: int = 256):
