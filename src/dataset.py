@@ -1,7 +1,13 @@
-
 import numpy as np
 from torch.utils.data import Dataset
 
+# ImageNet normalization statistics
+IMAGENET_MEAN = (0.485, 0.456, 0.406)
+IMAGENET_STD = (0.229, 0.224, 0.225)
+
+# Aliases used by Albumentations Normalize
+MEAN = IMAGENET_MEAN
+STD = IMAGENET_STD
 
 class PolypSegmentationDataset(Dataset):
     """
